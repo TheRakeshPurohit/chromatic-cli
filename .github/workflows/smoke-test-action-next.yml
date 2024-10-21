@@ -1,16 +1,11 @@
-name: Smoke test via yarn
-
-on:
-  workflow_call:
-    secrets:
-      SMOKE_TESTS_CHROMATIC_PROJECT_TOKEN:
-        required: true
+name: Smoke test via action next
+on: merge_group
 
 permissions:
   contents: read
 
 jobs:
-  self-test:
+  smoke-test-action-next:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -21,8 +16,16 @@ jobs:
           node-version: lts/*
       - run: corepack enable
       - run: yarn
-      - run: yarn build
-      - run: yarn chromatic --build-script-name build-test-storybook --exit-zero-on-changes --force-rebuild
+      - name: Push to action-next
+        run: yarn run release-next
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      - name: Run build against action-next
+        uses: chromaui/action-next@latest
+        with:
+          buildScriptName: build-test-storybook
+          exitZeroOnChanges: true
+          forceRebuild: true
         env:
           LOG_LEVEL: debug
           DEBUG: chromatic-cli
